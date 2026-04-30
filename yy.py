@@ -26,7 +26,7 @@ ENCRYPTION_KEY = bytes.fromhex('3859e4386916208894d1ebef53182792f02498eed478def1
 
 # ==================== إعدادات Groq (LLaMA) ====================
 GROQ_API_KEY = "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"                        # ضع مفتاح Groq الخاص بك هنا
-MODEL_NAME = "llama3-8b-8192"                   # أو llama3-70b-8192
+MODEL_NAME = "llama-3.1-8b-instant"                   # أو llama3-70b-8192
 USE_MOCK_AI = False
 
 # ==================== قاعدة البيانات ====================
