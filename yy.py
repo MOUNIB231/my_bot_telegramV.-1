@@ -1,3 +1,4 @@
+import os
 import logging
 import sqlite3
 import random
@@ -20,14 +21,18 @@ from telegram.ext import (
 )
 from telegram.constants import ParseMode
 import httpx
+from dotenv import load_dotenv
+
+# تحميل المتغيرات من ملف .env
+load_dotenv()
 
 # ==================== الإعدادات العامة ====================
-TOKEN = "8612117067:AAGGTV8QLmuEi7m3xGkNbuiZn5UJNtTwiwY"
-ADMIN_ID = 7745757216
-ENCRYPTION_KEY = bytes.fromhex('3859e4386916208894d1ebef53182792f02498eed478def11b46eef7435eebfb')
+TOKEN = os.getenv("TOKEN")
+ADMIN_ID = int(os.getenv("ADMIN_ID", "0"))
+ENCRYPTION_KEY = bytes.fromhex(os.getenv("ENCRYPTION_KEY", ""))
 
 # ==================== إعدادات Groq ====================
-GROQ_API_KEY = "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"
+GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 MODEL_NAME = "llama-3.1-8b-instant"
 USE_MOCK_AI = False
 
@@ -35,7 +40,6 @@ USE_MOCK_AI = False
 LEVEL_NAMES = {'basic': '🥉 عادي', 'premium': '🥈 مميز', 'pro': '🥇 محترف', 'admin': '👑 أدمن'}
 LEVEL_LIMITS = {'basic': 10, 'premium': 50, 'pro': 999, 'admin': 9999}
 
-# ==================== أوضاع الذكاء الاصطناعي ====================
 AI_MODES = {
     'general': "أنت مساعد ذكي ومفيد. أجب بالعربية بأسلوب واضح ومباشر.",
     'coder': "أنت خبير برمجة محترف. أجب بالعربية مع أمثلة برمجية كاملة.",
@@ -92,7 +96,6 @@ def init_db():
     conn.commit()
     conn.close()
 
-# ==================== دوال قاعدة البيانات ====================
 def db_execute(query, params=()):
     conn = sqlite3.connect(DB_NAME)
     c = conn.cursor()
@@ -116,7 +119,6 @@ def db_fetchall(query, params=()):
     conn.close()
     return rows
 
-# ==================== دوال مساعدة ====================
 def generate_code(length=8):
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=length))
 
@@ -242,14 +244,14 @@ USER_AI_MODE = {}
 # ==================== القوائم والأزرار ====================
 def main_menu_keyboard():
     keyboard = [
-        [InlineKeyboardButton("🧠 الذكاء الاصطناعي", callback_data="menu_ai")],
-        [InlineKeyboardButton("🔄 وضع AI الحالي", callback_data="menu_ai_mode")],
-        [InlineKeyboardButton("🔐 تشفير AES", callback_data="menu_encrypt"), InlineKeyboardButton("🔓 فك AES", callback_data="menu_decrypt")],
-        [InlineKeyboardButton("📊 أدوات متقدمة", callback_data="menu_advanced")],
-        [InlineKeyboardButton("👥 نظام الإحالة", callback_data="menu_referral")],
-        [InlineKeyboardButton("📜 سجل الذكاء", callback_data="menu_history")],
-        [InlineKeyboardButton("👤 حسابي", callback_data="menu_profile")],
-        [InlineKeyboardButton("💬 تواصل", callback_data="menu_contact")],
+        [InlineKeyboardButton("🧠 الذكاء الاصطناعي 🧠", callback_data="menu_ai")],
+        [InlineKeyboardButton("🔄 تغيير وضع الذكاء 🔄", callback_data="menu_ai_mode")],
+        [InlineKeyboardButton("🔐 تشفير AES", callback_data="menu_encrypt"), InlineKeyboardButton("🔓 فك تشفير AES", callback_data="menu_decrypt")],
+        [InlineKeyboardButton("📊 أدوات متقدمة 📊", callback_data="menu_advanced")],
+        [InlineKeyboardButton("👥 نظام الإحالة 👥", callback_data="menu_referral")],
+        [InlineKeyboardButton("📜 سجل الذكاء 📜", callback_data="menu_history")],
+        [InlineKeyboardButton("👤 حسابي 👤", callback_data="menu_profile")],
+        [InlineKeyboardButton("💬 تواصل مع المطور 💬", callback_data="menu_contact")],
     ]
     return InlineKeyboardMarkup(keyboard)
 
@@ -618,32 +620,29 @@ async def check_scheduled_broadcasts(context: ContextTypes.DEFAULT_TYPE):
 def main():
     init_db()
     logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
-
-    # استخدام ApplicationBuilder (متوافق مع v21.x و Python 3.13)
     app = ApplicationBuilder().token(TOKEN).build()
 
-    # المهام المجدولة
     job_queue = app.job_queue
     job_queue.run_repeating(check_expiring_accounts, interval=3600, first=60)
     job_queue.run_repeating(check_scheduled_broadcasts, interval=300, first=30)
 
-    # المعالجات
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("admin", admin_command))
-    app.add_handler(CallbackQueryHandler(request_activation, pattern="^request_activation$"))
-    app.add_handler(CallbackQueryHandler(use_code_start, pattern="^use_code$"))
-    app.add_handler(CallbackQueryHandler(admin_approve, pattern="^(approve|reject)_"))
+    app.add_handler(CallbackQueryHandler(admin_approve, pattern="^(approve|reject)_[0-9]+$"))
     app.add_handler(CallbackQueryHandler(admin_approve_with_days, pattern="^approvewith_"))
     app.add_handler(CallbackQueryHandler(set_level_callback, pattern="^setlevel_"))
-    app.add_handler(CallbackQueryHandler(main_menu_handler, pattern="^menu_|^aimode_|^tool_|^back_main$"))
-    app.add_handler(CallbackQueryHandler(admin_callback, pattern="^admin_|^gencode_"))
+    app.add_handler(CallbackQueryHandler(admin_callback, pattern="^admin_"))
+    app.add_handler(CallbackQueryHandler(admin_callback, pattern="^gencode_"))
+    app.add_handler(CallbackQueryHandler(request_activation, pattern="^request_activation$"))
+    app.add_handler(CallbackQueryHandler(use_code_start, pattern="^use_code$"))
+    app.add_handler(CallbackQueryHandler(main_menu_handler, pattern="^(menu_|aimode_|tool_|back_main)"))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_code_input), group=1)
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text), group=2)
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, admin_block_id), group=3)
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, admin_change_level_id), group=4)
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, admin_broadcast), group=5)
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, admin_schedule_msg), group=6)
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, admin_schedule_time), group=7)
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text), group=8)
 
     print("✅ MonoAIHub bot is running...")
     app.run_polling()
