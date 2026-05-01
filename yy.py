@@ -21,18 +21,14 @@ from telegram.ext import (
 )
 from telegram.constants import ParseMode
 import httpx
-from dotenv import load_dotenv
-
-# تحميل المتغيرات من ملف .env
-load_dotenv()
 
 # ==================== الإعدادات العامة ====================
-TOKEN = os.getenv("TOKEN")
-ADMIN_ID = int(os.getenv("ADMIN_ID", "0"))
-ENCRYPTION_KEY = bytes.fromhex(os.getenv("ENCRYPTION_KEY", ""))
+TOKEN = "8612117067:AAGGTV8QLmuEi7m3xGkNbuiZn5UJNtTwiwY"
+ADMIN_ID = 7745757216
+ENCRYPTION_KEY = bytes.fromhex("3859e4386916208894d1ebef53182792f02498eed478def11b46eef7435eebfb")
 
 # ==================== إعدادات Groq ====================
-GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
+GROQ_API_KEY = "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" 
 MODEL_NAME = "llama-3.1-8b-instant"
 USE_MOCK_AI = False
 
